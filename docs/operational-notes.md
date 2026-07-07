@@ -2,6 +2,8 @@
 
 [← Back to README](../README.md)
 
+A few compatibility requirements and behavioral quirks worth knowing before relying on this integration in production:
+
 - compatible with modern Home Assistant versions that support External Statistics
 - behavior also depends on recorder policy and purge configuration
 - a ["not excluded from recorder" Repair](repairs.md#recorder_not_excluded) is a useful reminder, not a functional blocker

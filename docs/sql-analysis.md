@@ -16,6 +16,14 @@ WHERE metadata_id = (
 );
 ```
 
+**Expected result**: roughly one row per cycle elapsed since the entity's first point (closed cycles + the current one, which is updated in place, not multiplied). For a meter running a full year:
+
+- `daily` -> ~365 rows
+- `monthly` -> ~12 rows
+- `yearly` -> ~1 row
+
+A much higher count signals unconsolidated noise — see [`unexpected_points_for_cycle`](repairs.md#unexpected_points_for_cycle).
+
 **Count short-term rows (`states`):**
 
 ```sql
@@ -28,30 +36,12 @@ WHERE metadata_id = (
 );
 ```
 
-**Expected steady-state `states` weight:**
+**Expected result**: **0**, if the entity is excluded from recorder as recommended (see [Why Recorder Should Be Excluded](how-it-works.md#why-recorder-should-be-excluded)). Any value greater than 0 means the entity is still being recorded — check your `recorder.exclude` config and the [`recorder_not_excluded`](repairs.md#recorder_not_excluded) Repair.
+
+**Expected steady-state `states` weight** (only relevant if recorder is *not* excluding the entity):
 
 ```text
 rows_states_steady ~ updates_per_day x purge_keep_days
 ```
 
-**Top heaviest entities in `states`:**
-
-```sql
-SELECT sm.entity_id, count(*) AS rows_count
-FROM states s
-JOIN states_meta sm ON sm.metadata_id = s.metadata_id
-GROUP BY sm.entity_id
-ORDER BY rows_count DESC
-LIMIT 20;
-```
-
-**Top heaviest entities in `statistics`:**
-
-```sql
-SELECT stm.statistic_id, count(*) AS rows_count
-FROM statistics st
-JOIN statistics_meta stm ON stm.id = st.metadata_id
-GROUP BY stm.statistic_id
-ORDER BY rows_count DESC
-LIMIT 20;
-```
+**Expected result**: this is not a query but the formula the previous count should converge to, in the misconfigured case where recorder still tracks the entity — it is the number the Lean exclusion is meant to avoid entirely.
