@@ -1,0 +1,12 @@
+{
+  "issues": {
+    "recorder_not_excluded": {
+      "title": "Lean Utility Meter not excluded from Recorder",
+      "description": "The entity `{entity_id}` is not excluded from the Recorder in your `configuration.yaml`.\n\nTo prevent intermediate values from bloating your database, please add it to your recorder's exclude configuration:\n\n```yaml\nrecorder:\n  exclude:\n    entities:\n      - {entity_id}\n```\nDon't worry, your historical charts will display correctly since `lean_utility_meter` saves consolidated stats directly to the long-term database."
+    },
+    "unexpected_points_for_cycle": {
+      "title": "Lean Utility Meter has more points than expected",
+      "description": "The entity `{entity_id}` has `{actual_points}` long-term points, but based on cycle `{cycle}` and first recorded point `{first_point}`, the expected count is `{expected_points}` (tolerance `{tolerance}`).\n\nThis usually means extra points were written for one or more cycles. You can run `lean_utility_meter.thin_history` to consolidate historical points.\n\nIf this is intentional, ignore this repair."
+    }
+  }
+}

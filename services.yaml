@@ -1,0 +1,75 @@
+thin_history:
+  name: Thin History
+  description: Retroactively clean intermediate hourly/5-minute points for the selected utility meters, preserving only consolidated period peaks.
+  response:
+    optional: false
+  fields:
+    entity_id:
+      name: Entities
+      description: The lean utility meter entities to thin.
+      required: true
+      selector:
+        entity:
+          integration: lean_utility_meter
+
+calibrate:
+  name: Calibrate
+  description: Calibrate the lean utility meter to a specific value.
+  fields:
+    entity_id:
+      name: Entity
+      description: The lean utility meter entity to calibrate.
+      required: true
+      selector:
+        entity:
+          integration: lean_utility_meter
+    value:
+      name: Value
+      description: The new value for the meter.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          step: 0.001
+          mode: box
+
+import_history:
+  name: Import History
+  description: Import historical statistics from another entity into this lean utility meter.
+  response:
+    optional: false
+  fields:
+    entity_id:
+      name: Entity
+      description: The lean utility meter entity to import data into.
+      required: true
+      selector:
+        entity:
+          integration: lean_utility_meter
+    source_entity:
+      name: Source Entity
+      description: The entity ID to import statistics from.
+      required: true
+      selector:
+        entity: {}
+
+clear_history:
+  name: Clear History
+  description: Permanently delete all historical statistics for this lean utility meter.
+  response:
+    optional: false
+  fields:
+    entity_id:
+      name: Entity
+      description: The lean utility meter entity to clear.
+      required: true
+      selector:
+        entity:
+          integration: lean_utility_meter
+    confirm_deletion:
+      name: Confirm Deletion
+      description: Type 'DELETE' to confirm you want to permanently destroy all historical data for this entity.
+      required: true
+      selector:
+        text:
