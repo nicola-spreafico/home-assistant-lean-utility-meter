@@ -10,7 +10,7 @@ from homeassistant.util import dt as dt_util
 from .period import get_period_key
 
 if TYPE_CHECKING:
-    from .sensor import LeanUtilityMeterSensor
+    from .entity import LeanUtilityMeterSensor
 
 
 def stat_field(row: Any, name: str) -> Any:

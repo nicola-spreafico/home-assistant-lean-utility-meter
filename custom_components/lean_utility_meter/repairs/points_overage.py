@@ -22,7 +22,7 @@ from ..period import count_expected_points_from_first_start
 from . import is_entity_recorded_by_recorder
 
 if TYPE_CHECKING:
-    from ..sensor import LeanUtilityMeterSensor
+    from ..entity import LeanUtilityMeterSensor
 
 _LOGGER = logging.getLogger(__name__)
 

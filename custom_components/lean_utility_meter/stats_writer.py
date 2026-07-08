@@ -11,7 +11,11 @@ from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from homeassistant.components.recorder import get_instance as get_recorder_instance
-from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
+from homeassistant.components.recorder.models import (
+    StatisticData,
+    StatisticMeanType,
+    StatisticMetaData,
+)
 from homeassistant.components.recorder.statistics import (
     async_import_statistics,
     statistics_during_period,
@@ -22,7 +26,7 @@ from .period import get_period_start
 from .util import parse_stat_start, resolve_unit, stat_field
 
 if TYPE_CHECKING:
-    from .sensor import LeanUtilityMeterSensor
+    from .entity import LeanUtilityMeterSensor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,7 +111,7 @@ async def async_capture_and_write_stats(meter: LeanUtilityMeterSensor, is_final:
     unit_class = None
 
     metadata = StatisticMetaData(
-        has_mean=False,
+        mean_type=StatisticMeanType.NONE,
         has_sum=True,
         unit_class=unit_class,
         name=meter.name or meter.entity_id,

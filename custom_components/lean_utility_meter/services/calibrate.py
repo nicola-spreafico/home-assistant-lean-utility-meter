@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from ..sensor import LeanUtilityMeterSensor
+    from ..entity import LeanUtilityMeterSensor
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -15,7 +15,11 @@ from homeassistant.components.recorder.db_schema import (
     StatisticsMeta,
     StatisticsShortTerm,
 )
-from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
+from homeassistant.components.recorder.models import (
+    StatisticData,
+    StatisticMeanType,
+    StatisticMetaData,
+)
 from homeassistant.components.recorder.statistics import (
     async_import_statistics,
     statistics_during_period,
@@ -26,7 +30,7 @@ from homeassistant.core import ServiceResponse
 from ..util import consolidate_rows_by_period, parse_stat_start, stat_field
 
 if TYPE_CHECKING:
-    from ..sensor import LeanUtilityMeterSensor
+    from ..entity import LeanUtilityMeterSensor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -217,7 +221,7 @@ async def _async_thin_statistic_id(meter: LeanUtilityMeterSensor, statistic_id: 
 
     if rebuild_required:
         metadata = StatisticMetaData(
-            has_mean=False,
+            mean_type=StatisticMeanType.NONE,
             has_sum=True,
             unit_class=None,
             name=name,

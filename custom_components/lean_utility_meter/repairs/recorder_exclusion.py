@@ -15,7 +15,7 @@ from ..const import DOMAIN
 from . import is_entity_recorded_by_recorder
 
 if TYPE_CHECKING:
-    from ..sensor import LeanUtilityMeterSensor
+    from ..entity import LeanUtilityMeterSensor
 
 
 async def async_check_recorder_exclusion(meter: LeanUtilityMeterSensor) -> None:

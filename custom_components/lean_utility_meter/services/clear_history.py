@@ -17,7 +17,7 @@ from homeassistant.components.recorder.util import session_scope
 from homeassistant.core import ServiceResponse
 
 if TYPE_CHECKING:
-    from ..sensor import LeanUtilityMeterSensor
+    from ..entity import LeanUtilityMeterSensor
 
 _LOGGER = logging.getLogger(__name__)
 
