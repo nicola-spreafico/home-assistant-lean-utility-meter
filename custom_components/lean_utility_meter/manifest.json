@@ -1,10 +1,10 @@
 {
   "domain": "lean_utility_meter",
   "name": "Lean Utility Meter",
+  "after_dependencies": ["sensor"],
   "codeowners": ["@nicola-spreafico"],
   "config_flow": false,
   "dependencies": ["recorder"],
-  "after_dependencies": ["sensor"],
   "documentation": "https://github.com/nicola-spreafico/home-assistant-lean-utility-meter",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/issues",
