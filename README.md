@@ -2,7 +2,7 @@
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/v/release/nicola-spreafico/home-assistant-lean-utility-meter?include_prereleases)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/releases)
-[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](LICENSE)
+[![License: GPL-3.0](https://img.shields.io/github/license/nicola-spreafico/home-assistant-lean-utility-meter)](LICENSE)
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/nicola-spreafico/home-assistant-lean-utility-meter)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/commits)
 [![GitHub Issues](https://img.shields.io/github/issues/nicola-spreafico/home-assistant-lean-utility-meter)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/issues)
 
