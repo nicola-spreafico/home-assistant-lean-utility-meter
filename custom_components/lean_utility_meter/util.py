@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.util import dt as dt_util
 
-from .period import get_period_key
+from .period import get_period_key, get_period_start
 
 if TYPE_CHECKING:
     from .entity import LeanUtilityMeterSensor
@@ -30,7 +30,12 @@ def parse_stat_start(value: Any) -> datetime | None:
 
 
 def consolidate_rows_by_period(valid_rows: list[dict[str, Any]], cycle: str) -> list[dict[str, Any]]:
-    """Keep only the most recent row per cycle period, sorted by start."""
+    """Keep one row per cycle period, anchored at the period start.
+
+    The kept row is the one with the highest cumulative sum (ties broken by
+    most recent start), and its start is normalized to the period start so it
+    matches the row the live stats writer upserts for the current cycle.
+    """
     groups: dict[Any, list[dict[str, Any]]] = {}
     for r in valid_rows:
         key = get_period_key(r["start"], cycle)
@@ -40,8 +45,10 @@ def consolidate_rows_by_period(valid_rows: list[dict[str, Any]], cycle: str) -> 
 
     consolidated_rows = []
     for key, group_rows in groups.items():
-        max_row = max(group_rows, key=lambda x: x["start"])
-        consolidated_rows.append(max_row)
+        best_row = max(group_rows, key=lambda x: (x["sum"], x["start"]))
+        consolidated_rows.append(
+            {**best_row, "start": get_period_start(best_row["start"], cycle)}
+        )
 
     consolidated_rows.sort(key=lambda x: x["start"])
     return consolidated_rows
