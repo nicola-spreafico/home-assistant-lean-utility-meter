@@ -68,8 +68,11 @@ async def async_capture_and_write_stats(meter: LeanUtilityMeterSensor, is_final:
 
     last_sum = 0.0
     try:
-        # Switch to statistics_during_period for more reliable retrieval of external stats
-        start_search = now - timedelta(days=10)
+        # Look back to the previous cycle's start so its closing row is found
+        # even for cycles longer than a few days (monthly, quarterly, yearly).
+        start_search = get_period_start(
+            period_start - timedelta(hours=1), meter._cycle or "monthly"
+        )
         stats_map = await get_recorder_instance(meter.hass).async_add_executor_job(
             statistics_during_period,
             meter.hass,

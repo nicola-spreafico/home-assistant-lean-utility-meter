@@ -9,5 +9,5 @@
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/issues",
   "requirements": [],
-  "version": "0.0.2"
+  "version": "0.0.3"
 }
