@@ -24,11 +24,4 @@ If, on the contrary, recorder still includes a Lean entity:
 2. you lose most short-term space savings
 3. a [Repair warning](repairs.md#recorder_not_excluded) is created to remind you
 
-Recommended configuration:
-
-```yaml
-recorder:
-  exclude:
-    entities:
-      - sensor.your_lean_entity
-```
+See [Configuration](configuration.md#examples) for the recommended `recorder.exclude` snippet.

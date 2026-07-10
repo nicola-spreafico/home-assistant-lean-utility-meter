@@ -16,13 +16,7 @@ WHERE metadata_id = (
 );
 ```
 
-**Expected result**: roughly one row per cycle elapsed since the entity's first point (closed cycles + the current one, which is updated in place, not multiplied). For a meter running a full year:
-
-- `daily` -> ~365 rows
-- `monthly` -> ~12 rows
-- `yearly` -> ~1 row
-
-A much higher count signals unconsolidated noise — see [`unexpected_points_for_cycle`](repairs.md#unexpected_points_for_cycle).
+**Expected result**: roughly one row per cycle elapsed since the entity's first point (closed cycles + the current one, which is updated in place, not multiplied) — the per-cycle yearly footprint is listed in [Benefits with Real Numbers](concept.md#benefits-with-real-numbers). A much higher count signals unconsolidated noise — see [`unexpected_points_for_cycle`](repairs.md#unexpected_points_for_cycle).
 
 **Count short-term rows (`states`):**
 
