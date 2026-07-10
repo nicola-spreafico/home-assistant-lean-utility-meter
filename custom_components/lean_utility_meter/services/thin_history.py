@@ -161,6 +161,13 @@ async def _async_thin_statistic_id(meter: LeanUtilityMeterSensor, statistic_id: 
             if states_meta is None:
                 states_deleted = 0
             else:
+                # states rows reference their predecessor via the self-referencing
+                # old_state_id FK. Clear it before the bulk delete: backends that
+                # enforce the FK row-by-row (e.g. MySQL/InnoDB) reject the delete
+                # otherwise. Same approach as recorder's purge; no-op elsewhere.
+                session.query(States).filter(
+                    States.metadata_id == states_meta.metadata_id
+                ).update({"old_state_id": None}, synchronize_session=False)
                 states_deleted = session.query(States).filter(
                     States.metadata_id == states_meta.metadata_id
                 ).delete(synchronize_session=False)

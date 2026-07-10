@@ -11,9 +11,13 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
 
+import voluptuous as vol
+
 from homeassistant.components.recorder import get_instance as get_recorder_instance
 from homeassistant.components.recorder.db_schema import Statistics, StatisticsMeta
 from homeassistant.components.recorder.util import session_scope
+from homeassistant.components.repairs import RepairsFlow
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
 
@@ -88,22 +92,60 @@ async def async_check_points_overage(meter: LeanUtilityMeterSensor) -> None:
     )
 
     if actual_points > expected_points + POINTS_OVERAGE_TOLERANCE:
+        placeholders = {
+            "entity_id": meter.entity_id,
+            "cycle": cycle,
+            "actual_points": str(actual_points),
+            "expected_points": str(expected_points),
+            "tolerance": str(POINTS_OVERAGE_TOLERANCE),
+            "first_point": dt_util.as_local(first_start).isoformat(timespec="seconds"),
+        }
         ir.async_create_issue(
             meter.hass,
             domain=DOMAIN,
             issue_id=issue_id,
-            is_fixable=False,
+            is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="unexpected_points_for_cycle",
-            translation_placeholders={
-                "entity_id": meter.entity_id,
-                "cycle": cycle,
-                "actual_points": str(actual_points),
-                "expected_points": str(expected_points),
-                "tolerance": str(POINTS_OVERAGE_TOLERANCE),
-                "first_point": dt_util.as_local(first_start).isoformat(timespec="seconds"),
-            },
+            translation_placeholders=placeholders,
+            data=placeholders,
         )
         return
 
     ir.async_delete_issue(meter.hass, domain=DOMAIN, issue_id=issue_id)
+
+
+class PointsOverageRepairFlow(RepairsFlow):
+    """Fix flow: run thin_history on the affected meter, or ignore the issue."""
+
+    def __init__(self, issue_id: str, data: dict[str, str]) -> None:
+        self._issue_id = issue_id
+        self._data = data
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["confirm", "ignore"],
+            description_placeholders=self._data,
+        )
+
+    async def async_step_ignore(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        ir.async_ignore_issue(self.hass, DOMAIN, self._issue_id, True)
+        return self.async_abort(reason="issue_ignored")
+
+    async def async_step_confirm(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        if user_input is not None:
+            await self.hass.services.async_call(
+                DOMAIN,
+                "thin_history",
+                {"entity_id": self._data["entity_id"]},
+                blocking=True,
+                return_response=True,
+            )
+            return self.async_create_entry(title="", data={})
+
+        return self.async_show_form(
+            step_id="confirm",
+            data_schema=vol.Schema({}),
+            description_placeholders=self._data,
+        )

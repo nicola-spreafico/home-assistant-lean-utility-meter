@@ -6,7 +6,26 @@
     },
     "unexpected_points_for_cycle": {
       "title": "Lean Utility Meter has more points than expected",
-      "description": "The entity `{entity_id}` has `{actual_points}` long-term points, but based on cycle `{cycle}` and first recorded point `{first_point}`, the expected count is `{expected_points}` (tolerance `{tolerance}`).\n\nThis usually means extra points were written for one or more cycles. You can run `lean_utility_meter.thin_history` to consolidate historical points.\n\nIf this is intentional, ignore this repair."
+      "description": "The entity `{entity_id}` has `{actual_points}` long-term points, but based on cycle `{cycle}` and first recorded point `{first_point}`, the expected count is `{expected_points}` (tolerance `{tolerance}`).\n\nThis usually means extra points were written for one or more cycles. You can run `lean_utility_meter.thin_history` to consolidate historical points.\n\nIf this is intentional, ignore this repair.",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Lean Utility Meter has more points than expected",
+            "description": "The entity `{entity_id}` has `{actual_points}` long-term points, but based on cycle `{cycle}` and first recorded point `{first_point}`, the expected count is `{expected_points}` (tolerance `{tolerance}`).\n\nThis usually means extra points were written for one or more cycles. You can consolidate the historical points now, or ignore this repair if the extra points are intentional.",
+            "menu_options": {
+              "confirm": "Consolidate historical points",
+              "ignore": "Ignore, the extra points are intentional"
+            }
+          },
+          "confirm": {
+            "title": "Consolidate historical points",
+            "description": "Submitting will run `lean_utility_meter.thin_history` on `{entity_id}`, consolidating the long-term statistics to one point per cycle (`{cycle}`) and clearing short-term statistics. This cannot be undone."
+          }
+        },
+        "abort": {
+          "issue_ignored": "This repair has been ignored. You can find it again under ignored repairs (overflow menu of the Repairs page) if you change your mind."
+        }
+      }
     }
   }
 }
