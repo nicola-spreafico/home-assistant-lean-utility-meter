@@ -10,20 +10,11 @@
 >
 > "Why can I not have a counter that grows in real time but is stored in a consolidated way?"
 
-This integration was created to solve data bloating in high-frequency utility meters.
-
-## Project Goal
-
-The goal is to clearly separate:
-
-1. **live visualization** — the current cycle keeps growing in the UI
-2. **consolidated persistence** — one point per closed cycle
-
-In short: reactive dashboards in the short term, lighter database in the long term.
+A classic utility meter updates — and records — every time its source sensor changes, which for a power sensor can mean tens of thousands of database rows per year just to answer the question "how much did I consume each month?". This integration was created to solve that data bloating at the root, while leaving the live counter behavior untouched.
 
 ## Benefits with Real Numbers
 
-**`statistics` table (Long-Term Statistics)** — number of rows depends on the cycle:
+**`statistics` table (Long-Term Statistics)** — exactly one point per closed cycle, so the yearly footprint depends only on the cycle:
 
 - `daily` -> about 365 rows/year
 - `monthly` -> 12 rows/year
@@ -33,14 +24,7 @@ In short: reactive dashboards in the short term, lighter database in the long te
 
 - about 0 rows/year
 
-If recorder is misconfigured and still includes the entity, it falls back to the usual steady-state order of magnitude:
-
-- `updates_per_day x purge_keep_days`
-- plus a temporary buffer before purge runs
-
-So, in practice:
-
-- Lean's gain covers both consolidated historical storage (`statistics`) and short-term storage (`states`), as long as the recommended recorder exclusion is in place
+If recorder is misconfigured and still includes the entity, the `states` table falls back to the usual steady-state growth of any recorded entity — see [Measuring Data Weight (SQL)](sql-analysis.md) for the formula and the queries to verify the impact on your own database.
 
 ## Community References and Prior Discussions
 

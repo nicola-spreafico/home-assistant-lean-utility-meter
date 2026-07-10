@@ -6,22 +6,16 @@
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/nicola-spreafico/home-assistant-lean-utility-meter)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/commits)
 [![GitHub Issues](https://img.shields.io/github/issues/nicola-spreafico/home-assistant-lean-utility-meter)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/issues)
 
-**A drop-in extension of Home Assistant's `utility_meter` that keeps your counters live in the UI while storing only what matters: one consolidated point per cycle, instead of thousands of intermediate rows.**
+> **"How I moved from 13,246 database rows to one row per year"** — a real yearly gas meter tracked since January 2025 had accumulated 13,246 hourly rows in Long-Term Statistics; after one `thin_history` run it stores exactly one consolidated point per year (a 4,400:1 reduction), while the live counter keeps updating in real time.
 
-> "Why, with a monthly meter, should I store thousands of values instead of just the 12 points that matter each year?"
->
-> "Why, to visualize yearly monthly trends, do I need to scan through thousands of intermediate rows?"
->
-> "Why can I not have a counter that grows in real time but is stored in a consolidated way?"
+**A drop-in extension of Home Assistant's `utility_meter` that keeps your counters live in the UI while storing only what matters: one consolidated point per closed cycle, instead of thousands of intermediate rows.**
 
-> **"How I moved from 13,246 database rows to one point per year"** — a real yearly gas meter tracked since January 2025 had accumulated 13,246 hourly rows in Long-Term Statistics; after one `thin_history` run it stores exactly one consolidated point per year (a 4,400:1 reduction), while the live counter keeps updating in real time.
-
-A classic utility meter updates — and records — every time its source sensor changes, which for a power sensor can mean tens of thousands of database rows per year just to answer the question "how much did I consume each month?". Lean Utility Meter solves this by separating the two jobs a meter actually has:
+Lean Utility Meter separates the two jobs a meter actually has:
 
 - **Live visualization** — the sensor keeps growing in real time on your dashboards, exactly like a classic utility meter.
-- **Consolidated persistence** — long-term history gets exactly **one point per closed cycle**: 12 rows/year for a monthly meter, 365 for a daily one, written directly into Long-Term Statistics outside the recorder pipeline.
+- **Consolidated persistence** — long-term history gets exactly **one point per closed cycle**, written directly into Long-Term Statistics outside the recorder pipeline.
 
-The result: reactive dashboards in the short term, a dramatically lighter database in the long term — with full compatibility with standard `utility_meter` options (cycles, tariffs, cron, net consumption, …).
+The result: reactive dashboards in the short term, a dramatically lighter database in the long term — with full compatibility with standard `utility_meter` options (cycles, tariffs, cron, net consumption, …). Wondering why a meter should ever store thousands of rows in the first place? Start from [Concept & Motivation](docs/concept.md).
 
 ## Quick Start
 
@@ -51,7 +45,7 @@ That's it: the meter behaves like a normal utility meter in the UI, but its stor
 
 | Page | What you'll find |
 | --- | --- |
-| [Concept & Motivation](docs/concept.md) | The problem, the goal, benefits with real numbers, community references |
+| [Concept & Motivation](docs/concept.md) | Why this exists: the problem, benefits with real numbers, community references |
 | [How It Works](docs/how-it-works.md) | Operational model and why recorder exclusion is by design |
 | [Configuration](docs/configuration.md) | All options (inherited and Lean-specific) with YAML examples |
 | [Services & Actions](docs/services.md) | `thin_history`, `import_history`, `clear_history`, `calibrate`, `reset` — what each touches and when to use it |
