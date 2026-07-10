@@ -14,6 +14,8 @@
 >
 > "Why can I not have a counter that grows in real time but is stored in a consolidated way?"
 
+> **"How I moved from 13,246 database rows to one point per year"** — a real yearly gas meter tracked since January 2025 had accumulated 13,246 hourly rows in Long-Term Statistics; after one `thin_history` run it stores exactly one consolidated point per year (a 4,400:1 reduction), while the live counter keeps updating in real time.
+
 A classic utility meter updates — and records — every time its source sensor changes, which for a power sensor can mean tens of thousands of database rows per year just to answer the question "how much did I consume each month?". Lean Utility Meter solves this by separating the two jobs a meter actually has:
 
 - **Live visualization** — the sensor keeps growing in real time on your dashboards, exactly like a classic utility meter.
