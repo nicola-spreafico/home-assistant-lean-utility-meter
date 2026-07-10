@@ -1,8 +1,6 @@
 thin_history:
   name: Thin History
   description: Retroactively clean intermediate hourly/5-minute points for the selected utility meters, preserving only consolidated period peaks.
-  response:
-    optional: false
   fields:
     entity_id:
       name: Entities
@@ -37,8 +35,6 @@ calibrate:
 import_history:
   name: Import History
   description: Import historical statistics from another entity into this lean utility meter.
-  response:
-    optional: false
   fields:
     entity_id:
       name: Entity
@@ -57,8 +53,6 @@ import_history:
 clear_history:
   name: Clear History
   description: Permanently delete all historical statistics for this lean utility meter.
-  response:
-    optional: false
   fields:
     entity_id:
       name: Entity
