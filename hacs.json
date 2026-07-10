@@ -1,5 +1,4 @@
 {
   "name": "Lean Utility Meter",
-  "render_readme": true,
-  "country": []
+  "homeassistant": "2025.12.0"
 }
