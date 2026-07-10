@@ -6,7 +6,6 @@
     },
     "unexpected_points_for_cycle": {
       "title": "Lean Utility Meter has more points than expected",
-      "description": "The entity `{entity_id}` has `{actual_points}` long-term points, but based on cycle `{cycle}` and first recorded point `{first_point}`, the expected count is `{expected_points}` (tolerance `{tolerance}`).\n\nThis usually means extra points were written for one or more cycles. You can run `lean_utility_meter.thin_history` to consolidate historical points.\n\nIf this is intentional, ignore this repair.",
       "fix_flow": {
         "step": {
           "init": {
