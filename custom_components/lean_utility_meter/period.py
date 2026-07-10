@@ -13,7 +13,9 @@ from homeassistant.util import dt as dt_util
 def get_period_key(dt: datetime, cycle: str) -> Any:
     """Get grouping key for a given timezone-aware datetime and cycle type."""
     local_dt = dt_util.as_local(dt)
-    if cycle == "daily":
+    if cycle == "hourly":
+        return (local_dt.year, local_dt.month, local_dt.day, local_dt.hour)
+    elif cycle == "daily":
         return (local_dt.year, local_dt.month, local_dt.day)
     elif cycle == "weekly":
         isocal = local_dt.isocalendar()
