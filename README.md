@@ -50,6 +50,7 @@ That's it: the meter behaves like a normal utility meter in the UI, but its stor
 | [Configuration](docs/configuration.md) | All options (inherited and Lean-specific) with YAML examples |
 | [Services & Actions](docs/services.md) | `thin_history`, `import_history`, `clear_history`, `calibrate`, `reset` — what each touches and when to use it |
 | [Migration Workflows](docs/migration.md) | Converting an existing meter in place, or migrating in parallel with zero downtime |
+| [Energy Dashboard](docs/energy-dashboard.md) | Feeding the dashboard with an hourly Lean meter: point budget, entity ids vs external statistics, the "not tracked" warning |
 | [Repairs](docs/repairs.md) | The self-diagnostics the integration reports and how to react |
 | [Measuring Data Weight (SQL)](docs/sql-analysis.md) | Queries to verify the real storage impact on your own database |
 | [Operational Notes](docs/operational-notes.md) | Compatibility, restart-at-rollover edge cases |
