@@ -63,6 +63,14 @@ async def async_clear_history(meter: LeanUtilityMeterSensor, **kwargs: Any) -> S
             if states_meta is None:
                 states_deleted = 0
             else:
+                # States.old_state_id is a self-referencing FK linking each row to
+                # its predecessor. A bulk DELETE checks that constraint per-row in
+                # unspecified order, so it can fail (and roll back the whole
+                # transaction) if an older row is deleted before the newer row
+                # that still points to it. Break the chain first.
+                session.query(States).filter(
+                    States.metadata_id == states_meta.metadata_id
+                ).update({States.old_state_id: None}, synchronize_session=False)
                 states_deleted = session.query(States).filter(
                     States.metadata_id == states_meta.metadata_id
                 ).delete(synchronize_session=False)
