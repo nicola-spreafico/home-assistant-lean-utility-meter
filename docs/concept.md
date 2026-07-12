@@ -26,6 +26,22 @@ A classic utility meter updates — and records — every time its source sensor
 
 If recorder is misconfigured and still includes the entity, the `states` table falls back to the usual steady-state growth of any recorded entity — see [Measuring Data Weight (SQL)](sql-analysis.md) for the formula and the queries to verify the impact on your own database.
 
+## Why This Also Makes Dashboards Faster
+
+Fewer stored points don't just save disk space — they make every chart that reads them faster to load, because the row count is what the query has to scan and the frontend has to process, independently of the time range shown.
+
+A monthly History/Statistics graph asking for the last 10 years only ever needs **120 points** (`12 rows/year × 10 years`) from a `monthly` Lean meter, because that's all that was ever written. The database returns them in a single fast index lookup, and the frontend renders 120 points instantly.
+
+With a classic `utility_meter`, that same 10-year monthly chart still has to read every row the source ever produced in that window — easily tens of thousands for a power sensor updating every few seconds — then downsample them to a monthly resolution. The extra rows are pure overhead: read from disk, transferred, and discarded, and it's paid on every single dashboard load, not just once.
+
+## Why Defining Multiple Cycles Per Sensor Is the Right Pattern
+
+With a classic `utility_meter`, the usual advice is to define a *single* high-resolution meter (e.g. `hourly`) and let the frontend downsample it for daily, monthly, and yearly charts — because every additional cycle you define is a *full second copy* of the same source, each writing its own row on every source update. Four meters (`hourly`, `daily`, `monthly`, `yearly`) on the same sensor means 4× the row count, not four complementary views.
+
+With Lean Utility Meter that trade-off disappears, because a Lean meter only ever writes **one row per cycle it closes** — a `yearly` meter writes ~1 row/year regardless of how often the source changes. Defining four Lean meters with four different `cycle` values on the same source is therefore not wasteful duplication: it's four independent, minimal footprints that sum to roughly `365 + 12 + 1` rows/year for `daily` + `monthly` + `yearly` (see [Benefits with Real Numbers](#benefits-with-real-numbers)), each one storing *only* the data a chart at that resolution actually needs — no downsampling required at query time.
+
+This is why the [Energy Dashboard setup](energy-dashboard.md) and the example packages define one Lean meter per cycle instead of one meter plus frontend aggregation: it's the pattern the integration is designed around, not a workaround.
+
 ## Community References and Prior Discussions
 
 This topic has been discussed multiple times in the Home Assistant ecosystem:
