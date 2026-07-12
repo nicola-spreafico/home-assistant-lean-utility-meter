@@ -10,7 +10,7 @@
 
 - `source` (required): source entity
 - `cycle`: `hourly`, `daily`, `weekly`, `monthly`, `bimonthly`, `quarterly`, `yearly`
-- `cron`: custom reset schedule
+- `cron`: custom reset schedule — ⚠️ only drives the *live* reset timing (inherited from core `utility_meter`); `thin_history` and `import_history` don't understand cron and only consolidate against the named `cycle` boundaries (see [Services & Actions](services.md#cron-limitation))
 - `delta_values`: treat source as deltas instead of cumulative total
 - `net_consumption`: allows up/down behavior (useful for percentages)
 - `tariffs`: create tariff meters
