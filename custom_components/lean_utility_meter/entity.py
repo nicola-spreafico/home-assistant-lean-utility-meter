@@ -16,10 +16,12 @@ from decimal import Decimal
 import logging
 from typing import Any
 
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.components.utility_meter.sensor import UtilityMeterSensor
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Event, HomeAssistant, ServiceResponse, callback
 from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
+from homeassistant.helpers.typing import UNDEFINED, UndefinedType
 from homeassistant.util import dt as dt_util
 
 from . import stats_writer
@@ -50,8 +52,19 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
         tariff_entity: str | None,
         parent_meter: str,
         live_update_interval: timedelta = timedelta(minutes=5),
+        entity_id: str | None = None,
+        force_unit_of_measurement: str | None | UndefinedType = UNDEFINED,
+        force_device_class: SensorDeviceClass | None | UndefinedType = UNDEFINED,
+        force_state_class: SensorStateClass | None | UndefinedType = UNDEFINED,
     ) -> None:
-        """Initialize the Lean Utility Meter sensor."""
+        """Initialize the Lean Utility Meter sensor.
+
+        The trailing keyword parameters exist for meters created by *other*
+        integrations via discovery (see sensor.py): `entity_id` pins the entity id
+        so it matches a pre-existing LTS series, and the `force_*` presentation
+        overrides replace the values the core meter would adopt from the source
+        entity. `UNDEFINED` means "inherit"; an explicit `None` forces "no value".
+        """
         super().__init__(
             hass=hass,
             source_entity=source_entity,
@@ -75,6 +88,31 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
         self._absolute_values = absolute_values
         self._last_stats_update = None
         self._previous_valid_state = None
+        if entity_id is not None:
+            self.entity_id = entity_id
+        self._force_unit_of_measurement = force_unit_of_measurement
+        self._force_device_class = force_device_class
+        self._force_state_class = force_state_class
+
+    # Presentation: forced value when the creator provided one, otherwise the
+    # inherited behavior (core utility_meter adopts these from the source entity).
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        if self._force_unit_of_measurement is not UNDEFINED:
+            return self._force_unit_of_measurement
+        return super().native_unit_of_measurement
+
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        if self._force_device_class is not UNDEFINED:
+            return self._force_device_class
+        return super().device_class
+
+    @property
+    def state_class(self) -> SensorStateClass | None:
+        if self._force_state_class is not UNDEFINED:
+            return self._force_state_class
+        return super().state_class
 
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
