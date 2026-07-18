@@ -1,6 +1,7 @@
 # Lean Utility Meter
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![Validate](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/actions/workflows/validate.yml/badge.svg)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/actions/workflows/validate.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/nicola-spreafico/home-assistant-lean-utility-meter)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/releases)
 [![License: GPL-3.0](https://img.shields.io/github/license/nicola-spreafico/home-assistant-lean-utility-meter)](LICENSE)
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/nicola-spreafico/home-assistant-lean-utility-meter)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/commits)
