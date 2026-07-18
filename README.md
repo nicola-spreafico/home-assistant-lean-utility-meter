@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="custom_components/lean_utility_meter/brand/icon.png" alt="Lean Utility Meter" width="128">
+</p>
+
 # Lean Utility Meter
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
