@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="custom_components/lean_utility_meter/brand/icon.png" alt="Lean Utility Meter" width="128">
+  <img src="custom_components/lean_utility_meter/brand/icon@2x.png" alt="Lean Utility Meter" width="128">
 </p>
 
 # Lean Utility Meter
