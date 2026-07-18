@@ -32,6 +32,25 @@ The result: reactive dashboards in the short term, a dramatically lighter databa
 
 > **"How I moved from 13,246 database rows to one row per year"** — a real yearly gas meter tracked since January 2025 had accumulated 13,246 hourly rows in Long-Term Statistics; after one `thin_history` run it stores exactly one consolidated point per year (a 4,400:1 reduction), while the live counter keeps updating in real time.
 
+## Installation
+
+### HACS
+
+[![Install with HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nicola-spreafico&repository=home-assistant-lean-utility-meter&category=integration)
+
+Use [Install Lean Utility Meter with HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=nicola-spreafico&repository=home-assistant-lean-utility-meter&category=integration), or:
+
+1. Open HACS.
+2. Add this repository as a custom repository.
+3. Select **Integration** as the repository category.
+4. Install **Lean Utility Meter**.
+5. Restart Home Assistant.
+
+### Manual installation
+
+Copy `custom_components/lean_utility_meter` into the Home Assistant
+`custom_components` directory, then restart Home Assistant.
+
 ## Quick Start
 
 ```yaml
