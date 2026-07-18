@@ -4,6 +4,10 @@
 
 Each service has a different **scope**: some only touch already-closed cycles, some only the currently active cycle, and some rebuild both.
 
+### Cron limitation
+
+`cron` (custom reset schedule) only drives *live* behavior — when the entity resets and starts a new in-memory cycle, inherited straight from core `utility_meter`. It is **not** understood by `thin_history` or `import_history`: both consolidate history using the fixed named `cycle` boundaries (`hourly`, `daily`, `monthly`, …) via the same period calculation the live writer uses for `cycle`, and have no equivalent logic for arbitrary cron expressions. If a meter is configured with `cron` and no `cycle`, these two services silently fall back to monthly boundaries — which will not match your actual reset schedule. If you need history consolidated on a custom schedule, either accept the nearest named `cycle` for these two services, or treat the meter as `hourly`/`daily` for history purposes and let the live `cron` reset handle the display-side cadence separately.
+
 | Service | Purpose | Scope |
 | --- | --- | --- |
 | `lean_utility_meter.thin_history` | Retro-consolidate one or more Lean meters | Closed cycles **and** current cycle |
