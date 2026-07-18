@@ -8,16 +8,29 @@
 [![GitHub Issues](https://img.shields.io/github/issues/nicola-spreafico/home-assistant-lean-utility-meter)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/issues)
 [![Buy Me a Pizza](https://img.shields.io/badge/Buy%20me%20a%20pizza-%F0%9F%8D%95-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/mf3ebnouct)
 
-> **"How I moved from 13,246 database rows to one row per year"** — a real yearly gas meter tracked since January 2025 had accumulated 13,246 hourly rows in Long-Term Statistics; after one `thin_history` run it stores exactly one consolidated point per year (a 4,400:1 reduction), while the live counter keeps updating in real time.
+<p align="center">
+  <img src="custom_components/lean_utility_meter/brand/icon.png" alt="Lean Utility Meter">
+</p>
 
 **A drop-in extension of Home Assistant's `utility_meter` that keeps your counters live in the UI while storing only what matters: one consolidated point per closed cycle, instead of thousands of intermediate rows.**
 
-Lean Utility Meter separates the two jobs a meter actually has:
+## Why this integration exists
+
+> *"Is your Home Assistant database growing by thousands of rows just because a
+> utility meter stores every intermediate reading forever — when all you ever
+> look back at is the value of the closed month?"*
+
+> *"Do you want meters that stay live on your dashboards, without paying for
+> them with years of hourly history you will never read?"*
+
+Lean Utility Meter was created for these cases. It separates the two jobs a meter actually has:
 
 - **Live visualization** — the sensor keeps growing in real time on your dashboards, exactly like a classic utility meter.
 - **Consolidated persistence** — long-term history gets exactly **one point per closed cycle**, written directly into Long-Term Statistics outside the recorder pipeline.
 
 The result: reactive dashboards in the short term, a dramatically lighter database in the long term — with full compatibility with standard `utility_meter` options (cycles, tariffs, cron, net consumption, …). Wondering why a meter should ever store thousands of rows in the first place? Start from [Concept & Motivation](docs/concept.md).
+
+> **"How I moved from 13,246 database rows to one row per year"** — a real yearly gas meter tracked since January 2025 had accumulated 13,246 hourly rows in Long-Term Statistics; after one `thin_history` run it stores exactly one consolidated point per year (a 4,400:1 reduction), while the live counter keeps updating in real time.
 
 ## Quick Start
 
