@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="custom_components/lean_utility_meter/brand/icon.png" alt="Lean Utility Meter">
-</p>
-
 # Lean Utility Meter
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
@@ -11,6 +7,10 @@
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/nicola-spreafico/home-assistant-lean-utility-meter)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/commits)
 [![GitHub Issues](https://img.shields.io/github/issues/nicola-spreafico/home-assistant-lean-utility-meter)](https://github.com/nicola-spreafico/home-assistant-lean-utility-meter/issues)
 [![Buy Me a Pizza](https://img.shields.io/badge/Buy%20me%20a%20pizza-%F0%9F%8D%95-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/mf3ebnouct)
+
+<p align="center">
+  <img src="custom_components/lean_utility_meter/brand/icon.png" alt="Lean Utility Meter">
+</p>
 
 **A drop-in extension of Home Assistant's `utility_meter` that keeps your counters live in the UI while storing only what matters: one consolidated point per closed cycle, instead of thousands of intermediate rows.**
 
