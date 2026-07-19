@@ -73,6 +73,7 @@ That's it: the meter behaves like a normal utility meter in the UI, but its stor
 - **Live but throttled** — the current cycle updates in the UI in real time; LTS writes are throttled by a configurable `live_update_interval`
 - **Migration-friendly** — dedicated services to import history from an existing meter and to retro-thin noisy legacy data
 - **Self-monitoring** — raises Home Assistant Repairs when the setup drifts from the recommended state
+- **Crash-resilient** — on startup the meter reconciles with the recorder database: missed rollover resets are applied retroactively and stale restored values are replaced by the last 5-minute upsert, avoiding the classic "double day" after a hard crash ([details](docs/operational-notes.md#crash-and-restart-recovery))
 - **Beyond utilities** — can also track non-monotonic signals (e.g. photovoltaic self-sufficiency percentage) on periodic cycles
 
 ## Documentation
@@ -87,7 +88,7 @@ That's it: the meter behaves like a normal utility meter in the UI, but its stor
 | [Energy Dashboard](docs/energy-dashboard.md) | Feeding the dashboard with an hourly Lean meter: point budget, entity ids vs external statistics, the "not tracked" warning |
 | [Repairs](docs/repairs.md) | The self-diagnostics the integration reports and how to react |
 | [Measuring Data Weight (SQL)](docs/sql-analysis.md) | Queries to verify the real storage impact on your own database |
-| [Operational Notes](docs/operational-notes.md) | Compatibility, restart-at-rollover edge cases |
+| [Operational Notes](docs/operational-notes.md) | Compatibility, crash/restart recovery, rollover edge cases |
 | [Advanced Uses](docs/advanced-uses.md) | Tracking non-monotonic metrics beyond classic utilities |
 
 Suggested reading path: understand the problem ([Concept](docs/concept.md)) → understand the model ([How It Works](docs/how-it-works.md)) → apply it ([Configuration](docs/configuration.md), [Migration](docs/migration.md)) → verify with numbers ([SQL](docs/sql-analysis.md)).

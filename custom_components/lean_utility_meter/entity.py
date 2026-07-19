@@ -2,7 +2,8 @@
 
 Core measurement logic:
 - __init__(): Instantiate sensor with meter config
-- async_added_to_hass(): Register callbacks, start periodic updates, schedule repair checks
+- async_added_to_hass(): Recover state from recorder statistics (crash/missed-reset
+  resilience), register callbacks, start periodic updates, schedule repair checks
 - async_reading(): Fetch source entity state and update lean meter with delta/state
 - _async_on_state_change(): Callback when source entity changes, trigger stats write
 - _async_delayed_absolute_sync(): Sync absolute values after initial delay (for absolute_values=True)
@@ -117,6 +118,13 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
         await super().async_added_to_hass()
+
+        # Reconcile the value core just restored from core.restore_state with
+        # the recorder DB, which survives crashes the restore file does not:
+        # recovers a rollover reset lost while HA was down and re-adopts the
+        # fresher 5-minute upsert of the running cycle. Must run before any
+        # source event is processed and before the first stats write.
+        await stats_writer.async_recover_after_restart(self)
 
         # Check if entity is excluded from recorder and raise issue if not.
         self.hass.async_create_task(recorder_exclusion.async_check_recorder_exclusion(self))

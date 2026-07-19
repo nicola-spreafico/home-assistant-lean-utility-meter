@@ -27,6 +27,7 @@ from homeassistant.components.recorder.statistics import (
 from homeassistant.components.recorder.util import session_scope
 from homeassistant.core import ServiceResponse
 
+from ..period import normalize_cycle
 from ..util import consolidate_rows_by_period, parse_stat_start, stat_field
 
 if TYPE_CHECKING:
@@ -38,7 +39,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_thin_history(meter: LeanUtilityMeterSensor, **kwargs: Any) -> ServiceResponse:
     """Perform retroactive history thinning to consolidate duplicate points."""
     statistic_id = meter.entity_id
-    cycle = meter._cycle or "monthly"
+    cycle = normalize_cycle(meter._cycle)
     _LOGGER.info("Thinning history for %s with cycle %s", statistic_id, cycle)
     result = await _async_thin_statistic_id(meter, statistic_id, cycle)
     return result

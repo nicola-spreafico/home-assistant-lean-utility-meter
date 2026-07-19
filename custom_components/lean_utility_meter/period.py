@@ -4,14 +4,33 @@ All functions work on timezone-aware datetimes: input is converted to local
 time to compute cycle boundaries, output boundaries are returned in UTC.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from homeassistant.util import dt as dt_util
 
+# The "lifetime" cycle mirrors a classic utility meter defined without a
+# cycle: the meter never resets and its whole history is one single period.
+# Its statistics row is anchored to a fixed hour-aligned epoch.
+LIFETIME_CYCLE = "lifetime"
+LIFETIME_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
+# Sentinel end for the lifetime period; only compared against, never written.
+LIFETIME_NEXT = datetime(2200, 1, 1, tzinfo=timezone.utc)
+
+
+def normalize_cycle(cycle: str | None) -> str:
+    """Map a meter's configured cycle to the one used for period math.
+
+    A meter defined without a cycle never resets (same semantics as the core
+    utility_meter), so its period math is the single "lifetime" period.
+    """
+    return cycle or LIFETIME_CYCLE
+
 
 def get_period_key(dt: datetime, cycle: str) -> Any:
     """Get grouping key for a given timezone-aware datetime and cycle type."""
+    if cycle == LIFETIME_CYCLE:
+        return LIFETIME_CYCLE
     local_dt = dt_util.as_local(dt)
     if cycle == "hourly":
         return (local_dt.year, local_dt.month, local_dt.day, local_dt.hour)
@@ -34,6 +53,8 @@ def get_period_key(dt: datetime, cycle: str) -> Any:
 
 def get_period_start(dt: datetime, cycle: str) -> datetime:
     """Get the start datetime of the period for the given cycle."""
+    if cycle == LIFETIME_CYCLE:
+        return LIFETIME_EPOCH
     local_dt = dt_util.as_local(dt)
     if cycle == "hourly":
         start = local_dt.replace(minute=0, second=0, microsecond=0)
@@ -59,6 +80,8 @@ def get_period_start(dt: datetime, cycle: str) -> datetime:
 
 def get_next_period_start(period_start: datetime, cycle: str) -> datetime:
     """Get the next period boundary for a given cycle."""
+    if cycle == LIFETIME_CYCLE:
+        return LIFETIME_NEXT
     local_dt = dt_util.as_local(period_start)
 
     if cycle == "hourly":

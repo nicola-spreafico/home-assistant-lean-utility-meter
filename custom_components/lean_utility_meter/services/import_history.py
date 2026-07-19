@@ -20,7 +20,7 @@ from homeassistant.components.recorder.statistics import (
 from homeassistant.core import ServiceResponse
 from homeassistant.util import dt as dt_util
 
-from ..period import get_period_start
+from ..period import get_period_start, normalize_cycle
 from ..util import consolidate_rows_by_period, parse_stat_start, resolve_unit, stat_field
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ async def async_import_history(meter: LeanUtilityMeterSensor, source_entity: str
     source_id = "recorder"
 
     now = dt_util.utcnow()
-    current_period_start = get_period_start(now, meter._cycle or "monthly")
+    current_period_start = get_period_start(now, normalize_cycle(meter._cycle))
 
     try:
         # Check if we have statistics prior to the current period
@@ -112,7 +112,7 @@ async def async_import_history(meter: LeanUtilityMeterSensor, source_entity: str
         _LOGGER.warning("No valid legacy rows found for %s", source_entity)
         return {"status": "no_valid_data", "imported_points": 0}
 
-    consolidated_rows = consolidate_rows_by_period(valid_rows, meter._cycle or "monthly")
+    consolidated_rows = consolidate_rows_by_period(valid_rows, normalize_cycle(meter._cycle))
 
     statistics_data = []
     for r in consolidated_rows:
