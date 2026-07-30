@@ -36,9 +36,10 @@ def _meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
 
     The spec mirrors the YAML options (source, cycle, net_consumption, ...) plus
     the creator-only keys: `entity_id` (pin the entity id) and the presentation
-    overrides `unit_of_measurement` / `device_class` / `state_class` (forced when
-    the key is present — an explicit None means "no value", an absent key means
-    "inherit from the source entity", as usual).
+    overrides `unit_of_measurement` / `device_class` / `state_class` /
+    `suggested_display_precision` (forced when the key is present — an explicit
+    None means "no value", an absent key means "inherit from the source entity",
+    as usual).
     """
     return LeanUtilityMeterSensor(
         hass=hass,
@@ -61,6 +62,9 @@ def _meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
         force_unit_of_measurement=spec.get("unit_of_measurement", UNDEFINED),
         force_device_class=spec.get("device_class", UNDEFINED),
         force_state_class=spec.get("state_class", UNDEFINED),
+        force_suggested_display_precision=spec.get(
+            "suggested_display_precision", UNDEFINED
+        ),
     )
 
 

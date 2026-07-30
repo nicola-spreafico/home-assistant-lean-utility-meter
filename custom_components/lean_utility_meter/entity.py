@@ -57,6 +57,7 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
         force_unit_of_measurement: str | None | UndefinedType = UNDEFINED,
         force_device_class: SensorDeviceClass | None | UndefinedType = UNDEFINED,
         force_state_class: SensorStateClass | None | UndefinedType = UNDEFINED,
+        force_suggested_display_precision: int | None | UndefinedType = UNDEFINED,
     ) -> None:
         """Initialize the Lean Utility Meter sensor.
 
@@ -94,6 +95,7 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
         self._force_unit_of_measurement = force_unit_of_measurement
         self._force_device_class = force_device_class
         self._force_state_class = force_state_class
+        self._force_suggested_display_precision = force_suggested_display_precision
 
     # Presentation: forced value when the creator provided one, otherwise the
     # inherited behavior (core utility_meter adopts these from the source entity).
@@ -114,6 +116,16 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
         if self._force_state_class is not UNDEFINED:
             return self._force_state_class
         return super().state_class
+
+    @property
+    def suggested_display_precision(self) -> int | None:
+        # Display only: the meter keeps accumulating at full precision, this just
+        # caps the decimals shown. It is a *default* — a precision the user picks
+        # by hand in the UI is stored under a different registry key that wins
+        # over this one, so it is never overwritten.
+        if self._force_suggested_display_precision is not UNDEFINED:
+            return self._force_suggested_display_precision
+        return super().suggested_display_precision
 
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
