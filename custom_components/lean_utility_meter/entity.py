@@ -2,7 +2,8 @@
 
 Core measurement logic:
 - __init__(): Instantiate sensor with meter config
-- async_added_to_hass(): Register callbacks, start periodic updates, schedule repair checks
+- async_added_to_hass(): Recover state from recorder statistics (crash/missed-reset
+  resilience), register callbacks, start periodic updates, schedule repair checks
 - async_reading(): Fetch source entity state and update lean meter with delta/state
 - _async_on_state_change(): Callback when source entity changes, trigger stats write
 - _async_delayed_absolute_sync(): Sync absolute values after initial delay (for absolute_values=True)
@@ -56,6 +57,7 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
         force_unit_of_measurement: str | None | UndefinedType = UNDEFINED,
         force_device_class: SensorDeviceClass | None | UndefinedType = UNDEFINED,
         force_state_class: SensorStateClass | None | UndefinedType = UNDEFINED,
+        force_suggested_display_precision: int | None | UndefinedType = UNDEFINED,
     ) -> None:
         """Initialize the Lean Utility Meter sensor.
 
@@ -93,6 +95,7 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
         self._force_unit_of_measurement = force_unit_of_measurement
         self._force_device_class = force_device_class
         self._force_state_class = force_state_class
+        self._force_suggested_display_precision = force_suggested_display_precision
 
     # Presentation: forced value when the creator provided one, otherwise the
     # inherited behavior (core utility_meter adopts these from the source entity).
@@ -114,9 +117,26 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
             return self._force_state_class
         return super().state_class
 
+    @property
+    def suggested_display_precision(self) -> int | None:
+        # Display only: the meter keeps accumulating at full precision, this just
+        # caps the decimals shown. It is a *default* — a precision the user picks
+        # by hand in the UI is stored under a different registry key that wins
+        # over this one, so it is never overwritten.
+        if self._force_suggested_display_precision is not UNDEFINED:
+            return self._force_suggested_display_precision
+        return super().suggested_display_precision
+
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
         await super().async_added_to_hass()
+
+        # Reconcile the value core just restored from core.restore_state with
+        # the recorder DB, which survives crashes the restore file does not:
+        # recovers a rollover reset lost while HA was down and re-adopts the
+        # fresher 5-minute upsert of the running cycle. Must run before any
+        # source event is processed and before the first stats write.
+        await stats_writer.async_recover_after_restart(self)
 
         # Check if entity is excluded from recorder and raise issue if not.
         self.hass.async_create_task(recorder_exclusion.async_check_recorder_exclusion(self))

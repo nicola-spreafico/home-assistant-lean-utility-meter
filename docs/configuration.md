@@ -9,7 +9,7 @@
 **Inherited main options:**
 
 - `source` (required): source entity
-- `cycle`: `hourly`, `daily`, `weekly`, `monthly`, `bimonthly`, `quarterly`, `yearly`
+- `cycle`: `hourly`, `daily`, `weekly`, `monthly`, `bimonthly`, `quarterly`, `yearly` — or **omitted entirely**: a Lean meter without a `cycle` never resets (a *lifetime* meter, same semantics as core). It keeps a single consolidated LTS row, upserted every 5 minutes, which makes the all-time total crash-safe: after a hard restart the value is recovered from the database instead of relying only on the (up to 15 minutes old) restore snapshot
 - `cron`: custom reset schedule — ⚠️ only drives the *live* reset timing (inherited from core `utility_meter`); `thin_history` and `import_history` don't understand cron and only consolidate against the named `cycle` boundaries (see [Services & Actions](services.md#cron-limitation))
 - `delta_values`: treat source as deltas instead of cumulative total
 - `net_consumption`: allows up/down behavior (useful for percentages)
@@ -75,25 +75,29 @@ template:
 
 # ----------------------------------------------------------------------------
 
-# 2. Lifetime: a plain core `utility_meter` (not Lean) with no `cycle`, so it never resets — it just mirrors the transient's running total. 
-#    It is kept OUT of the recorder: its only job is to hold "the all-time number" as a live entity state, not to keep history, so it writes exactly 0 rows/year either way.
+# 2. Lifetime: a Lean meter with no `cycle`, so it never resets — it just mirrors the transient's running total.
+#    It is kept OUT of the recorder: its only job is to hold "the all-time number" as a live entity state, not to keep history — on LTS it costs exactly 1 row, upserted in place every 5 minutes.
+#    That single row is not decorative: it is what makes the all-time total crash-safe. Home Assistant restores entities from a snapshot written every 15 minutes,
+#    so after a hard crash a plain core `utility_meter` here would come back with a stale value — and any gap it then "catches up" can be double-counted by every meter below it in the chain.
+#    The Lean lifetime recovers its value from the database row instead (see Crash and Restart Recovery in Operational Notes).
 #    Just as important: this makes the all-time total YOUR system's own value, decoupled from the raw sensor. 
 #    If the raw sensor gets replaced, glitches, or its own internal lifetime counter resets (firmware update, device swap, integration re-auth), only the transient briefly reflects that 
-#    this `utility_meter` keeps accumulating from where it was and calibrate can patch the gap. 
+#    this meter keeps accumulating from where it was and calibrate can patch the gap. 
 #    Reading the raw sensor's lifetime attribute directly, with no local counter of your own, means every one of those upstream incidents becomes permanent, unrecoverable data loss in your own history.
-utility_meter:
+
+# ----------------------------------------------------------------------------
+
+# 3. Lean meters: the never-resetting lifetime plus four independent, minimal-footprint views of it, one per cycle. 
+#    `hourly` is the one resolution the Energy Dashboard actually needs; 
+#    `daily`/`monthly`/`yearly` exist purely to feed custom
+#    History/Statistics graphs at their native resolution, with no downsampling needed at query time (see linked concept sections above).
+lean_utility_meter:
+  # The all-time counter (no cycle = never resets)
   my_source_energy_lifetime:
     unique_id: my_source_energy_lifetime
     source: sensor.my_source_energy_transient
     always_available: true
 
-# ----------------------------------------------------------------------------
-
-# 3. Lean meters: four independent, minimal-footprint views of the same lifetime source, one per cycle. 
-#    `hourly` is the one resolution the Energy Dashboard actually needs; 
-#    `daily`/`monthly`/`yearly` exist purely to feed custom
-#    History/Statistics graphs at their native resolution, with no downsampling needed at query time (see linked concept sections above).
-lean_utility_meter:
   # Feeds the built-in Energy Dashboard
   my_source_energy_hourly:
     unique_id: my_source_energy_hourly
@@ -131,4 +135,4 @@ recorder:
       - sensor.my_source_energy_yearly
 ```
 
-With this chain, the yearly database footprint for this single source is `~365 + 12 + 1` LTS rows from the three coarser Lean meters plus `~8,760` from the hourly one feeding the Energy Dashboard — and `0` rows anywhere else, regardless of how often `sensor.my_raw_source` itself updates.
+With this chain, the yearly database footprint for this single source is `~365 + 12 + 1` LTS rows from the three coarser Lean meters plus `~8,760` from the hourly one feeding the Energy Dashboard, plus the single in-place row of the lifetime meter — and `0` rows anywhere else, regardless of how often `sensor.my_raw_source` itself updates.

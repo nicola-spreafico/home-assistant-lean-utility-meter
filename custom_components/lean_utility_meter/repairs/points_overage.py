@@ -22,7 +22,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
 
 from ..const import DOMAIN
-from ..period import count_expected_points_from_first_start
+from ..period import count_expected_points_from_first_start, normalize_cycle
 from . import is_entity_recorded_by_recorder
 
 if TYPE_CHECKING:
@@ -82,7 +82,7 @@ async def async_check_points_overage(meter: LeanUtilityMeterSensor) -> None:
         ir.async_delete_issue(meter.hass, domain=DOMAIN, issue_id=issue_id)
         return
 
-    cycle = meter._cycle or "daily"
+    cycle = normalize_cycle(meter._cycle)
     first_start = payload["first_start"]
     actual_points = int(payload["actual_points"])
     expected_points = count_expected_points_from_first_start(

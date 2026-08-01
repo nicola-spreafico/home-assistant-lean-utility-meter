@@ -6,9 +6,11 @@
 
 **Data model** — the integration uses `Recorder External Statistics` APIs to write directly into LTS.
 
-**Closed cycles** — at cycle end (reset), the final value of the completed period is consolidated.
+**Closed cycles** — at cycle end (reset), the final value of the completed period is consolidated into that period's own row, so every closed cycle holds its exact final total.
 
 **Current cycle** — during the active cycle the sensor keeps updating in the UI. On LTS, the same slot for the current period is updated (live update logic), preventing uncontrolled point growth inside the same cycle.
+
+**Startup recovery** — after a restart, the restored meter value is reconciled against the recorder database: a rollover reset lost while HA was down (or in a hard crash) is applied retroactively, and a stale restored value is replaced by the fresher 5-minute upsert of the running cycle. See [Crash and Restart Recovery](operational-notes.md#crash-and-restart-recovery).
 
 **Existing historical data (retro-thinning)** — if you start from classic utility meter history with many intermediate points, use `thin_history` service to keep only consolidated period peaks and remove historical noise.
 
