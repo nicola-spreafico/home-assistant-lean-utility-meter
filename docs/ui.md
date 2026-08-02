@@ -6,20 +6,24 @@ Meters are declared in YAML, but they are **visible** in the UI: the integration
 
 Nothing there is editable. The YAML stays the single source of truth; the integration entry exists only because Home Assistant refuses to register devices for integrations that have no config entry. Opening it offers no options, and the entry stores nothing.
 
-## One device per source
+## One device per metered thing
 
-Meters are grouped by their `source:`. A meter chain — the never-resetting lifetime plus one meter per cycle, all fed by the same transient — is one metered thing seen at several resolutions, so it belongs on one page:
+Meters are grouped by what they ultimately measure. A chain — the never-resetting lifetime plus one meter per cycle — is one metered thing seen at several resolutions, so it belongs on one page:
 
 ```
-Device: my_source_energy_transient
-├─ my_source_energy_lifetime
-├─ my_source_energy_hourly
+Device: my_raw_source          ← the sensor at the root of the chain
+├─ my_source_energy_lifetime   (source: my_raw_source)
+├─ my_source_energy_hourly     (source: my_source_energy_lifetime)
 ├─ my_source_energy_daily
 ├─ my_source_energy_monthly
 └─ my_source_energy_yearly
 ```
 
+Note that grouping follows the chain rather than the immediate `source:`. In the layout above the cycle meters read the *lifetime*, which reads the raw sensor; grouping by immediate source would scatter one meter chain across two devices — the lifetime alone on one, the cycle meters on another named after a meter instead of after what it measures. So a source that is itself a Lean meter is followed upwards until a source that is not, and everything lands there.
+
 Nothing has to be declared for this: the YAML already says which source each meter reads. A meter with `tariffs:` puts all its per-tariff variants on the same device too.
+
+The walk predicts entity ids from the meter names, so a meter whose id was renamed by hand stops the walk and groups by its immediate source instead — a cosmetic fallback, never an error.
 
 The device takes the source entity's friendly name, falling back to its object id when the source has no name yet — it may not exist at the moment the meters are built.
 

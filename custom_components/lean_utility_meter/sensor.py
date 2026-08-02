@@ -28,6 +28,7 @@ from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UNDEFINED, ConfigType, DiscoveryInfoType
+from homeassistant.util import slugify
 
 from .const import DOMAIN
 from .entity import LeanUtilityMeterSensor
@@ -88,13 +89,43 @@ def meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
     return meter
 
 
-def _source_device_info(hass: HomeAssistant, source_entity: str) -> DeviceInfo:
-    """The device that groups every meter reading the same source.
+def _meter_entity_ids(meters: dict) -> dict[str, str]:
+    """Map each declared meter's entity id to the source it reads.
 
-    A meter chain — the lifetime plus one meter per cycle, all fed by the same
-    transient — is one metered thing seen at several resolutions, so it belongs
-    on one page. Grouping by `source:` gives exactly that, and needs nothing
-    declared: the YAML already says which source each meter reads.
+    Used to recognise a source that is itself a Lean meter. Entity ids are
+    predicted the way Home Assistant derives them, from the meter's name — the
+    slug when none is given. A prediction that misses simply stops the walk in
+    :func:`_root_source`, which falls back to grouping by immediate source.
+    """
+    chain: dict[str, str] = {}
+    for slug, conf in meters.items():
+        source = conf["source"]
+        chain[f"sensor.{slug}"] = source
+        if name := conf.get("name"):
+            chain[f"sensor.{slugify(name)}"] = source
+    return chain
+
+
+def _root_source(source: str, chain: dict[str, str]) -> str:
+    """Follow a meter chain up to the thing actually being metered.
+
+    A documented chain stacks meters: the cycle meters read the lifetime, which
+    reads the raw sensor. Grouping by immediate source would scatter one metered
+    thing across two devices — the lifetime alone on one, the cycles on another
+    named after a meter rather than after what it measures. Walking to the first
+    source that is not itself a Lean meter puts the whole chain on one page.
+    """
+    seen: set[str] = set()
+    while source in chain and source not in seen:
+        seen.add(source)
+        source = chain[source]
+    return source
+
+
+def _source_device_info(hass: HomeAssistant, source_entity: str) -> DeviceInfo:
+    """The device that groups every meter ultimately reading the same source.
+
+    Needs nothing declared: the YAML already says which source each meter reads.
 
     The name follows the source's own, falling back to its object id when the
     source has no friendly name yet (it may not exist at setup time).
@@ -147,6 +178,7 @@ async def async_setup_entry(
 ) -> None:
     """Build the YAML-declared meters, grouped into one device per source."""
     meters = hass.data.get(DOMAIN, {})
+    chain = _meter_entity_ids(meters)
 
     entities = []
 
@@ -217,8 +249,9 @@ async def async_setup_entry(
             )
 
         # Every meter of this source lands on the same device — including the
-        # per-tariff variants of a single declaration.
-        device = _source_device_info(hass, source)
+        # per-tariff variants of a single declaration, and the meters further
+        # down a chain, which resolve to the same root.
+        device = _source_device_info(hass, _root_source(source, chain))
         for entity in entities[first:]:
             entity._attr_device_info = device
 
