@@ -6,9 +6,9 @@ from typing import Any
 
 import voluptuous as vol
 
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.const import Platform, CONF_SOURCE
 
 from homeassistant.components.utility_meter.const import DATA_UTILITY
@@ -59,7 +59,14 @@ PLATFORMS = [Platform.SENSOR]
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
-    """Set up the Lean Utility Meter component."""
+    """Read the YAML meters and make sure an entry exists to back them.
+
+    The entry exists only so Home Assistant will let the integration register
+    devices — it holds no configuration. Note that the entities are unaffected
+    by the move to an entry: the entity registry keys on
+    (domain, platform, unique_id), and `platform` is this integration either
+    way, so existing meters keep their rows, entity ids and statistics.
+    """
     hass.data.setdefault(DOMAIN, {})
     # Initialize DATA_UTILITY to avoid KeyErrors in core UtilityMeterSensor
     hass.data.setdefault(DATA_UTILITY, {})
@@ -70,13 +77,30 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     # Save meter configurations
     hass.data[DOMAIN] = config[DOMAIN]
 
-    # Forward platform setup
-    for platform in PLATFORMS:
-        hass.async_create_task(
-            async_load_platform(
-                hass, platform, DOMAIN, {}, config
-            )
+    hass.async_create_task(
+        hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_IMPORT}, data={}
         )
+    )
 
     return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Forward the YAML meters to the sensor platform, which builds them."""
+    if not hass.data.get(DOMAIN):
+        _LOGGER.error(
+            "Lean Utility Meter has a config entry but no 'lean_utility_meter:' "
+            "block in your YAML configuration; no meters will be created. Restore "
+            "the block, or delete the integration entry to remove it for good"
+        )
+        return False
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload the platforms; the YAML meter configs stay for the next setup."""
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 

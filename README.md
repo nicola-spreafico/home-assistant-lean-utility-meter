@@ -67,6 +67,18 @@ recorder:
 
 That's it: the meter behaves like a normal utility meter in the UI, but its stored history stays at one point per month. See [Configuration](docs/configuration.md) for all options and [How It Works](docs/how-it-works.md) for why the recorder exclusion is part of the design.
 
+### Changed your mind?
+
+The options are the core ones, so going back is a matter of changing the domain: rename `lean_utility_meter:` to `utility_meter:`, drop the recorder exclusion, and you have the native meter again — same sources, same cycles, same tariffs. Nothing in this integration has to be uninstalled for that to work.
+
+The one thing to plan is the entity ids. Home Assistant keys the entity registry on *(domain, platform, unique id)*, so a native meter is a different registration from a Lean one even with an identical `unique_id` — recreate them side by side and the new meters come up as `sensor.…_2` while the old rows keep the original ids. Two restarts avoid that:
+
+1. Remove the `lean_utility_meter:` block and restart. The meters stay in the registry, now unavailable.
+2. Delete them (*Settings → Devices & Services → Entities*, filter by unavailable), which frees their entity ids.
+3. Add the `utility_meter:` block and restart. The native meters register with the original ids.
+
+Long-term statistics are keyed by entity id, so with the ids preserved the history carries over — but from that point it is written the native way, meaning the recorder's hourly rows rather than one consolidated point per cycle. Past cycles keep the shape Lean gave them; new ones do not.
+
 ## Highlights
 
 - **Drop-in** — inherits standard `utility_meter` semantics: `cycle`, `cron`, `tariffs`, `delta_values`, `net_consumption`, …
@@ -87,6 +99,7 @@ That's it: the meter behaves like a normal utility meter in the UI, but its stor
 | [Migration Workflows](docs/migration.md) | Converting an existing meter in place, or migrating in parallel with zero downtime |
 | [Energy Dashboard](docs/energy-dashboard.md) | Feeding the dashboard with an hourly Lean meter: point budget, entity ids vs external statistics, the "not tracked" warning |
 | [Repairs](docs/repairs.md) | The self-diagnostics the integration reports and how to react |
+| [The UI surface](docs/ui.md) | The device pages: meters grouped by source, and how meters created by other integrations differ |
 | [Measuring Data Weight (SQL)](docs/sql-analysis.md) | Queries to verify the real storage impact on your own database |
 | [Operational Notes](docs/operational-notes.md) | Compatibility, crash/restart recovery, rollover edge cases |
 | [Advanced Uses](docs/advanced-uses.md) | Tracking non-monotonic metrics beyond classic utilities |

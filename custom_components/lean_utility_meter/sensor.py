@@ -22,26 +22,37 @@ from datetime import timedelta
 
 import voluptuous as vol
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.helpers import config_validation as cv, entity_platform
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UNDEFINED, ConfigType, DiscoveryInfoType
+from homeassistant.util import slugify
 
 from .const import DOMAIN
 from .entity import LeanUtilityMeterSensor
 
 
-def _meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
-    """Build a meter from a discovery spec sent by another integration.
+def meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
+    """Build a meter from a spec supplied by another integration.
 
     The spec mirrors the YAML options (source, cycle, net_consumption, ...) plus
-    the creator-only keys: `entity_id` (pin the entity id) and the presentation
-    overrides `unit_of_measurement` / `device_class` / `state_class` /
+    the creator-only keys: `entity_id` (pin the entity id), `device_info` (attach
+    the meter to the creator's device) and the presentation overrides
+    `unit_of_measurement` / `device_class` / `state_class` /
     `suggested_display_precision` (forced when the key is present — an explicit
     None means "no value", an absent key means "inherit from the source entity",
     as usual).
+
+    Public on purpose: a creator that needs its meters on its **own** entity
+    platform — the only way `device_info` is honored, since Home Assistant
+    attaches devices only for platforms backed by a config entry — builds them
+    with this and calls :func:`register_entity_services` so the maintenance
+    services keep working. Dispatching specs by discovery instead keeps the
+    meters on this platform, where those services are already registered.
     """
-    return LeanUtilityMeterSensor(
+    meter = LeanUtilityMeterSensor(
         hass=hass,
         source_entity=spec["source"],
         name=spec.get("name", spec["unique_id"]),
@@ -66,6 +77,71 @@ def _meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
             "suggested_display_precision", UNDEFINED
         ),
     )
+    # Only meaningful when the meter is added by a config-entry-backed platform;
+    # harmless (ignored by Home Assistant) when it is added by this one.
+    if (device_info := spec.get("device_info")) is not None:
+        meter._attr_device_info = device_info
+    # With a device, `name` is the entity's own part and Home Assistant renders
+    # "<device> <name>" — so the creator can pass the bare measurement instead of
+    # repeating the device in every label.
+    if spec.get("has_entity_name"):
+        meter._attr_has_entity_name = True
+    return meter
+
+
+def _meter_entity_ids(meters: dict) -> dict[str, str]:
+    """Map each declared meter's entity id to the source it reads.
+
+    Used to recognise a source that is itself a Lean meter. Entity ids are
+    predicted the way Home Assistant derives them, from the meter's name — the
+    slug when none is given. A prediction that misses simply stops the walk in
+    :func:`_root_source`, which falls back to grouping by immediate source.
+    """
+    chain: dict[str, str] = {}
+    for slug, conf in meters.items():
+        source = conf["source"]
+        chain[f"sensor.{slug}"] = source
+        if name := conf.get("name"):
+            chain[f"sensor.{slugify(name)}"] = source
+    return chain
+
+
+def _root_source(source: str, chain: dict[str, str]) -> str:
+    """Follow a meter chain up to the thing actually being metered.
+
+    A documented chain stacks meters: the cycle meters read the lifetime, which
+    reads the raw sensor. Grouping by immediate source would scatter one metered
+    thing across two devices — the lifetime alone on one, the cycles on another
+    named after a meter rather than after what it measures. Walking to the first
+    source that is not itself a Lean meter puts the whole chain on one page.
+    """
+    seen: set[str] = set()
+    while source in chain and source not in seen:
+        seen.add(source)
+        source = chain[source]
+    return source
+
+
+def _source_device_info(hass: HomeAssistant, source_entity: str) -> DeviceInfo:
+    """The device that groups every meter ultimately reading the same source.
+
+    Needs nothing declared: the YAML already says which source each meter reads.
+
+    The name follows the source's own, falling back to its object id when the
+    source has no friendly name yet (it may not exist at setup time).
+    """
+    state = hass.states.get(source_entity)
+    name = None
+    if state is not None:
+        name = state.attributes.get("friendly_name")
+    if not name:
+        name = source_entity.split(".", 1)[-1].replace("_", " ")
+    return DeviceInfo(
+        identifiers={(DOMAIN, source_entity)},
+        name=name,
+        manufacturer="Lean Utility Meter",
+        model="Metered source",
+    )
 
 
 async def async_setup_platform(
@@ -74,21 +150,35 @@ async def async_setup_platform(
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
-    """Set up Lean Utility Meter sensors — from YAML, or from another integration.
+    """Set up Lean meters dispatched by another integration.
 
     Other integrations create Lean meters natively by dispatching
     ``async_load_platform(hass, "sensor", "lean_utility_meter", {"meters": [spec, ...]}, hass_config)``.
     Those meters belong to this platform, so the entity services (thin_history,
-    calibrate, ...) target them exactly like YAML-defined ones.
-    """
-    if discovery_info and "meters" in discovery_info:
-        async_add_entities(
-            [_meter_from_spec(hass, spec) for spec in discovery_info["meters"]], True
-        )
-        _register_entity_services()
-        return
+    calibrate, ...) target them exactly like YAML-defined ones — but, this
+    platform having no config entry, they cannot belong to a device. A creator
+    that needs devices builds them on its own platform instead: see
+    :func:`meter_from_spec`.
 
+    YAML meters no longer come through here; they are set up from the config
+    entry (:func:`async_setup_entry`) so they can be grouped into devices.
+    """
+    if not (discovery_info and "meters" in discovery_info):
+        return
+    async_add_entities(
+        [meter_from_spec(hass, spec) for spec in discovery_info["meters"]], True
+    )
+    register_entity_services()
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Build the YAML-declared meters, grouped into one device per source."""
     meters = hass.data.get(DOMAIN, {})
+    chain = _meter_entity_ids(meters)
 
     entities = []
 
@@ -107,6 +197,8 @@ async def async_setup_platform(
         tariffs = meter_conf.get("tariffs", [])
 
         live_update_interval = meter_conf.get("live_update_interval", timedelta(minutes=5))
+
+        first = len(entities)
 
         if tariffs:
             tariff_entity = f"select.{meter_slug}"
@@ -156,11 +248,18 @@ async def async_setup_platform(
                 )
             )
 
+        # Every meter of this source lands on the same device — including the
+        # per-tariff variants of a single declaration, and the meters further
+        # down a chain, which resolve to the same root.
+        device = _source_device_info(hass, _root_source(source, chain))
+        for entity in entities[first:]:
+            entity._attr_device_info = device
+
     async_add_entities(entities, True)
-    _register_entity_services()
+    register_entity_services()
 
 
-def _register_entity_services() -> None:
+def register_entity_services() -> None:
     """Register the maintenance entity services (idempotent across platform setups)."""
     platform = entity_platform.async_get_current_platform()
     platform.async_register_entity_service(

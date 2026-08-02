@@ -26,7 +26,9 @@ The expected count is computed from the data itself: starting from the timestamp
 
 <img src="img/unexpected_points_for_cycle_details.png" alt="unexpected_points_for_cycle_details" width="480" />
 
-**What to do** — run `lean_utility_meter.thin_history` on the affected entity to bring the series back to one point per cycle. If the extra points are intentional in your workflow, ignore the Repair.
+**What to do** — accept the Repair's offer to thin the series, or run `thin_history` yourself on the affected entity, to bring it back to one point per cycle. If the extra points are intentional in your workflow, ignore the Repair.
+
+> **Meters created by another integration.** Entity services are registered under the *platform's* domain, so a Lean meter that another integration built on its own platform answers to `<that integration>.thin_history` rather than `lean_utility_meter.thin_history` — calling the wrong one silently matches no entity. The Repair's fix button resolves the owning platform for you, so it always reaches the meter; only a manual call needs the right domain. Check the entity's integration on its settings page if you are unsure.
 
 <img src="img/unexpected_points_for_cycle_action.png" alt="unexpected_points_for_cycle_action" width="560" />
 
