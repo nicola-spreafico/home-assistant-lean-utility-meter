@@ -18,7 +18,7 @@ from homeassistant.components.recorder.db_schema import Statistics, StatisticsMe
 from homeassistant.components.recorder.util import session_scope
 from homeassistant.components.repairs import RepairsFlow
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers import entity_registry as er, issue_registry as ir
 from homeassistant.util import dt as dt_util
 
 from ..const import DOMAIN
@@ -133,12 +133,31 @@ class PointsOverageRepairFlow(RepairsFlow):
         ir.async_ignore_issue(self.hass, DOMAIN, self._issue_id, True)
         return self.async_abort(reason="issue_ignored")
 
+    def _thin_history_domain(self, entity_id: str) -> str:
+        """The domain whose `thin_history` actually reaches this meter.
+
+        Entity services are registered under the *platform's* domain and only
+        resolve entities of that platform. A Lean meter built by another
+        integration on its own platform (so that it can belong to a device)
+        therefore answers to `<that integration>.thin_history`, not to ours —
+        calling the wrong one is a silent no-op that would leave the issue
+        looking fixed while nothing was thinned.
+        """
+        entry = er.async_get(self.hass).async_get(entity_id)
+        platform = entry.platform if entry else None
+        if platform and platform != DOMAIN and self.hass.services.has_service(
+            platform, "thin_history"
+        ):
+            return platform
+        return DOMAIN
+
     async def async_step_confirm(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         if user_input is not None:
+            entity_id = self._data["entity_id"]
             await self.hass.services.async_call(
-                DOMAIN,
+                self._thin_history_domain(entity_id),
                 "thin_history",
-                {"entity_id": self._data["entity_id"]},
+                {"entity_id": entity_id},
                 blocking=True,
                 return_response=True,
             )

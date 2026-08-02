@@ -31,17 +31,25 @@ from .const import DOMAIN
 from .entity import LeanUtilityMeterSensor
 
 
-def _meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
-    """Build a meter from a discovery spec sent by another integration.
+def meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
+    """Build a meter from a spec supplied by another integration.
 
     The spec mirrors the YAML options (source, cycle, net_consumption, ...) plus
-    the creator-only keys: `entity_id` (pin the entity id) and the presentation
-    overrides `unit_of_measurement` / `device_class` / `state_class` /
+    the creator-only keys: `entity_id` (pin the entity id), `device_info` (attach
+    the meter to the creator's device) and the presentation overrides
+    `unit_of_measurement` / `device_class` / `state_class` /
     `suggested_display_precision` (forced when the key is present — an explicit
     None means "no value", an absent key means "inherit from the source entity",
     as usual).
+
+    Public on purpose: a creator that needs its meters on its **own** entity
+    platform — the only way `device_info` is honored, since Home Assistant
+    attaches devices only for platforms backed by a config entry — builds them
+    with this and calls :func:`register_entity_services` so the maintenance
+    services keep working. Dispatching specs by discovery instead keeps the
+    meters on this platform, where those services are already registered.
     """
-    return LeanUtilityMeterSensor(
+    meter = LeanUtilityMeterSensor(
         hass=hass,
         source_entity=spec["source"],
         name=spec.get("name", spec["unique_id"]),
@@ -66,6 +74,16 @@ def _meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
             "suggested_display_precision", UNDEFINED
         ),
     )
+    # Only meaningful when the meter is added by a config-entry-backed platform;
+    # harmless (ignored by Home Assistant) when it is added by this one.
+    if (device_info := spec.get("device_info")) is not None:
+        meter._attr_device_info = device_info
+    # With a device, `name` is the entity's own part and Home Assistant renders
+    # "<device> <name>" — so the creator can pass the bare measurement instead of
+    # repeating the device in every label.
+    if spec.get("has_entity_name"):
+        meter._attr_has_entity_name = True
+    return meter
 
 
 async def async_setup_platform(
@@ -83,9 +101,9 @@ async def async_setup_platform(
     """
     if discovery_info and "meters" in discovery_info:
         async_add_entities(
-            [_meter_from_spec(hass, spec) for spec in discovery_info["meters"]], True
+            [meter_from_spec(hass, spec) for spec in discovery_info["meters"]], True
         )
-        _register_entity_services()
+        register_entity_services()
         return
 
     meters = hass.data.get(DOMAIN, {})
@@ -157,10 +175,10 @@ async def async_setup_platform(
             )
 
     async_add_entities(entities, True)
-    _register_entity_services()
+    register_entity_services()
 
 
-def _register_entity_services() -> None:
+def register_entity_services() -> None:
     """Register the maintenance entity services (idempotent across platform setups)."""
     platform = entity_platform.async_get_current_platform()
     platform.async_register_entity_service(
