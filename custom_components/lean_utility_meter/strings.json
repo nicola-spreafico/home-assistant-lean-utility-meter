@@ -1,5 +1,6 @@
 {
   "config": {
+    "step": {},
     "abort": {
       "already_configured": "Lean Utility Meter is already set up.",
       "yaml_only": "Lean Utility Meter is configured in YAML. Declare your meters under a `lean_utility_meter:` block and restart Home Assistant; this page is read-only."
