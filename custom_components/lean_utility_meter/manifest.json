@@ -3,7 +3,7 @@
   "name": "Lean Utility Meter",
   "after_dependencies": ["sensor"],
   "codeowners": ["@nicola-spreafico"],
-  "config_flow": false,
+  "config_flow": true,
   "dependencies": ["recorder", "utility_meter"],
   "documentation": "https://github.com/nicola-spreafico/home-assistant-lean-utility-meter",
   "iot_class": "calculated",

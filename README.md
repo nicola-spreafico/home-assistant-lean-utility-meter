@@ -87,6 +87,7 @@ That's it: the meter behaves like a normal utility meter in the UI, but its stor
 | [Migration Workflows](docs/migration.md) | Converting an existing meter in place, or migrating in parallel with zero downtime |
 | [Energy Dashboard](docs/energy-dashboard.md) | Feeding the dashboard with an hourly Lean meter: point budget, entity ids vs external statistics, the "not tracked" warning |
 | [Repairs](docs/repairs.md) | The self-diagnostics the integration reports and how to react |
+| [The UI surface](docs/ui.md) | The device pages: meters grouped by source, and how meters created by other integrations differ |
 | [Measuring Data Weight (SQL)](docs/sql-analysis.md) | Queries to verify the real storage impact on your own database |
 | [Operational Notes](docs/operational-notes.md) | Compatibility, crash/restart recovery, rollover edge cases |
 | [Advanced Uses](docs/advanced-uses.md) | Tracking non-monotonic metrics beyond classic utilities |

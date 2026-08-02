@@ -22,8 +22,10 @@ from datetime import timedelta
 
 import voluptuous as vol
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.helpers import config_validation as cv, entity_platform
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import UNDEFINED, ConfigType, DiscoveryInfoType
 
@@ -86,26 +88,64 @@ def meter_from_spec(hass: HomeAssistant, spec: dict) -> LeanUtilityMeterSensor:
     return meter
 
 
+def _source_device_info(hass: HomeAssistant, source_entity: str) -> DeviceInfo:
+    """The device that groups every meter reading the same source.
+
+    A meter chain — the lifetime plus one meter per cycle, all fed by the same
+    transient — is one metered thing seen at several resolutions, so it belongs
+    on one page. Grouping by `source:` gives exactly that, and needs nothing
+    declared: the YAML already says which source each meter reads.
+
+    The name follows the source's own, falling back to its object id when the
+    source has no friendly name yet (it may not exist at setup time).
+    """
+    state = hass.states.get(source_entity)
+    name = None
+    if state is not None:
+        name = state.attributes.get("friendly_name")
+    if not name:
+        name = source_entity.split(".", 1)[-1].replace("_", " ")
+    return DeviceInfo(
+        identifiers={(DOMAIN, source_entity)},
+        name=name,
+        manufacturer="Lean Utility Meter",
+        model="Metered source",
+    )
+
+
 async def async_setup_platform(
     hass: HomeAssistant,
     config: ConfigType,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
-    """Set up Lean Utility Meter sensors — from YAML, or from another integration.
+    """Set up Lean meters dispatched by another integration.
 
     Other integrations create Lean meters natively by dispatching
     ``async_load_platform(hass, "sensor", "lean_utility_meter", {"meters": [spec, ...]}, hass_config)``.
     Those meters belong to this platform, so the entity services (thin_history,
-    calibrate, ...) target them exactly like YAML-defined ones.
-    """
-    if discovery_info and "meters" in discovery_info:
-        async_add_entities(
-            [meter_from_spec(hass, spec) for spec in discovery_info["meters"]], True
-        )
-        register_entity_services()
-        return
+    calibrate, ...) target them exactly like YAML-defined ones — but, this
+    platform having no config entry, they cannot belong to a device. A creator
+    that needs devices builds them on its own platform instead: see
+    :func:`meter_from_spec`.
 
+    YAML meters no longer come through here; they are set up from the config
+    entry (:func:`async_setup_entry`) so they can be grouped into devices.
+    """
+    if not (discovery_info and "meters" in discovery_info):
+        return
+    async_add_entities(
+        [meter_from_spec(hass, spec) for spec in discovery_info["meters"]], True
+    )
+    register_entity_services()
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Build the YAML-declared meters, grouped into one device per source."""
     meters = hass.data.get(DOMAIN, {})
 
     entities = []
@@ -125,6 +165,8 @@ async def async_setup_platform(
         tariffs = meter_conf.get("tariffs", [])
 
         live_update_interval = meter_conf.get("live_update_interval", timedelta(minutes=5))
+
+        first = len(entities)
 
         if tariffs:
             tariff_entity = f"select.{meter_slug}"
@@ -173,6 +215,12 @@ async def async_setup_platform(
                     live_update_interval=live_update_interval,
                 )
             )
+
+        # Every meter of this source lands on the same device — including the
+        # per-tariff variants of a single declaration.
+        device = _source_device_info(hass, source)
+        for entity in entities[first:]:
+            entity._attr_device_info = device
 
     async_add_entities(entities, True)
     register_entity_services()
