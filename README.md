@@ -65,7 +65,7 @@ recorder:
       - sensor.monthly_electricity   # Lean manages its own LTS — recorder isn't needed
 ```
 
-That's it: the meter behaves like a normal utility meter in the UI, but its stored history stays at one point per month. See [Configuration](docs/configuration.md) for all options and [How It Works](docs/how-it-works.md) for why the recorder exclusion is part of the design.
+That's it: the meter behaves like a normal utility meter for live state and dashboards, but its stored history stays at one point per month. Because Lean deliberately does not create 5-minute short-term statistics, the standard entity detail popup may show **"No statistics found"**; use a statistics-based card to chart the consolidated history. See [Configuration](docs/configuration.md) for all options and [How It Works](docs/how-it-works.md#entity-detail-popup-no-statistics-found) for the full explanation and why the recorder exclusion is part of the design.
 
 ### Changed your mind?
 

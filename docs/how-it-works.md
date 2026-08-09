@@ -20,6 +20,12 @@ These meters are **deliberately** excluded from the native recorder because they
 
 In other words, the `states` table is bypassed entirely by design: it would only produce duplicated, high-frequency rows that Lean has no use for, while the meaningful consolidated history already lives in LTS under Lean's own control.
 
+### Entity detail popup: "No statistics found"
+
+This design has one visible side effect in Home Assistant. When a Lean meter is opened from the UI, the entity detail popup may show **"No statistics found"** in its History section. The popup requests recent 5-minute short-term statistics; a correctly configured Lean meter has none because it is excluded from Recorder and only writes its single consolidated row per cycle directly to Long-Term Statistics.
+
+This message does not mean that the meter or its consolidated history is broken. The live state still updates normally, and the Long-Term Statistics remain available to statistics-based cards and dashboards over a time range appropriate for the meter's cycle. To display a chart, use a dedicated statistics graph (or a custom chart card). A separate Recorder-tracked proxy sensor can provide the standard detail-popup graph when required, at the cost of storing the intermediate history that Lean is designed to avoid.
+
 If, on the contrary, recorder still includes a Lean entity:
 
 1. the `states` table keeps growing with source update frequency
