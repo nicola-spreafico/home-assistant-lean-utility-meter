@@ -8,6 +8,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.const import Platform, CONF_SOURCE
 
@@ -89,12 +90,10 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Forward the YAML meters to the sensor platform, which builds them."""
     if not hass.data.get(DOMAIN):
-        _LOGGER.error(
-            "Lean Utility Meter has a config entry but no 'lean_utility_meter:' "
-            "block in your YAML configuration; no meters will be created. Restore "
-            "the block, or delete the integration entry to remove it for good"
+        raise ConfigEntryNotReady(
+            "Lean Utility Meter YAML configuration is not available yet. "
+            "Waiting for the 'lean_utility_meter:' block to be loaded"
         )
-        return False
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
