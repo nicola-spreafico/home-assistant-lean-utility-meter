@@ -68,7 +68,6 @@ class LeanUtilityMeterSensor(UtilityMeterSensor):
         entity. `UNDEFINED` means "inherit"; an explicit `None` forces "no value".
         """
         super().__init__(
-            hass=hass,
             source_entity=source_entity,
             name=name,
             unique_id=unique_id,
